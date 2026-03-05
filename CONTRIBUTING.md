@@ -24,18 +24,8 @@ Patches should be submitted as pull requests (PR).
 Before submitting a PR:
 
 - Ensure you are pulling from the most recent `main` branch and install dependencies with uv.
-  See the [developer documentation][developer documentation] for more details.
-- Your code must run and pass all the automated tests before you submit your PR
-  for review. See the [developer documentation][developer documentation] for information on linting,
-  formatting and testing. "Work in progress" or "Draft" pull requests are allowed to be submitted,
-  but should be clearly labeled as such and should not be merged until all tests pass and the code
-  has been reviewed.
 - Ideally, your patch should include new tests that cover your changes. It is your and
   your reviewer's responsibility to ensure your patch includes adequate tests.
-- If making changes that may impact performance, it is recommended to execute a load test. Please
-  see the [Load Testing README][load_testing_readme] for more information.
-- For more information on understanding the release process, please see relevant information
-  contained in the [release-process.md][release_process] documentation.
 
 When submitting a PR:
 
@@ -43,15 +33,9 @@ When submitting a PR:
 - Base your branch off the current `main`.
 - Add both your code and new tests if relevant.
 - [Sign][sign] your git commit.
-- Run tests, linting and formatting checks to make sure your code complies with established standards.
-(e.g. No warnings are returned for python: "`make lint`", "`make test`", "`make format`")
-- Ensure your changes do not reduce code coverage of the test suite.
 - Please do not include merge commits in pull requests; include only commits
   with the new relevant code.
 
-[developer documentation]: /docs/dev/index.md
-[load_testing_readme]: /tests/load/README.md
-[release_process]: /docs/dev/release-process.md
 [license]: /LICENSE
 [sign]: https://docs.github.com/en/github/authenticating-to-github/managing-commit-signature-verification/signing-commits
 
@@ -78,14 +62,6 @@ of `<type>: <subject>` where `type` must be one of:
 * **test**: Adding missing tests, test maintenance, and adding test features
 * **chore**: Changes to the build process or auxiliary tools and libraries such as documentation
   generation
-
-If associated with a Jira ticket, synchronization with Jira and GitHub is possible by appending the suffix of the Jiraticket to the branch name (`MOZ-1234` in the example below). Name the branch using this nomenclature with the optional `<type>` followed by a forward slash, followed by the Jira ticket and then a
-dash-separated description of the task. Ex. `feat/MOZ-1234-add-sentry-sdk` or `MOZ-1234-add-sentry-sdk` Note, the Jira ticket project and number can be added anywhere in the
-branch name, but adding to the beginning is ideal. You can also include the Jira issue at the end of
-commit messages to keep the task up to date. See Jira Docs for referencing issues [here][jira]
-
-[angular_commit_guidelines]: https://github.com/angular/angular/blob/main/CONTRIBUTING.md
-[jira]: https://support.atlassian.com/jira-software-cloud/docs/reference-issues-in-your-development-work/
 
 ### Subject
 
@@ -187,5 +163,3 @@ following qualities (also known as the F.I.R.S.T. principles):
 * Test code should be written with the same quality standard as production code and subject to the
   same linters and formatters.
 * Consider using a test-first approach when developing production code.
-
-[test_strategy]: /docs/dev/testing.md
