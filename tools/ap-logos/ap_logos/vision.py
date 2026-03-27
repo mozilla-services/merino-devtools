@@ -1,17 +1,22 @@
 from __future__ import annotations
 
 import base64
+import io
 from typing import Any
 
 import anthropic
 import httpx
+from PIL import Image
 from rich.console import Console
 
 from .models import APSearchResult, VisionCandidate, VisionChoice, VisionDecision
 
 console = Console()
 
+# Haiku for generic (fallback) classification; Sonnet for reference matching
+# where accuracy on subtle color/design differences matters most.
 VISION_MODEL = "claude-haiku-4-5-20251001"
+REFERENCE_VISION_MODEL = "claude-sonnet-4-20250514"
 
 LOGO_PROMPT = (
     "You are evaluating AP Newsroom search results to find the official "
@@ -34,11 +39,15 @@ LOGO_PROMPT = (
     "a plain/simple background. It should NOT contain photographs, player "
     "images, stadium shots, or action scenes.\n"
     "\n"
+    "4. REJECT any image that is predominantly white or very light colored. "
+    "A white logo on a white or light background is unusable — these "
+    "'ghost' logos are invisible when displayed.\n"
+    "\n"
     "Classify each image as:\n"
     "- LOGO: A clean graphic containing the entity's official logo/emblem "
-    "(no people, no photos)\n"
-    "- NOT_LOGO: Contains people, is a photograph, has no logo, or is an "
-    "event/commemorative badge\n"
+    "(no people, no photos, not predominantly white)\n"
+    "- NOT_LOGO: Contains people, is a photograph, has no logo, is an "
+    "event/commemorative badge, or is a white/invisible logo\n"
     "- UNCERTAIN: Might be a logo graphic but hard to tell at this size\n"
     "\n"
     "Pick the BEST logo. Prefer:\n"
@@ -71,11 +80,82 @@ LOGO_PROMPT = (
     "REASONING: <explanation>\n"
 )
 
+REFERENCE_MATCH_PROMPT = (
+    "You are matching AP Newsroom images to the official reference logo for: "
+    "{entity_name}\n"
+    "\n"
+    "The FIRST image (labeled 'REFERENCE') shows the CORRECT current official "
+    "logo from the league's website.\n"
+    "The remaining {count} images are AP Newsroom search results (candidates).\n"
+    "\n"
+    "Find the AP image that BEST MATCHES the reference logo.\n"
+    "\n"
+    "MATCHING CRITERIA (in priority order):\n"
+    "\n"
+    "1. DESIGN/SHAPE: Must be the same logo design — same icon, mascot, "
+    "letters, or emblem shape as the reference. This is the most important "
+    "criterion.\n"
+    "\n"
+    "2. COLORS: Colors must match the reference closely. A logo with the "
+    "correct shape but WRONG COLORS (grayscale, inverted, alternate color "
+    "scheme, different era's colors) is NOT a good match. Pay attention to "
+    "primary team colors, accent colors, and outlines.\n"
+    "\n"
+    "3. CURRENT VERSION: Prefer the current/modern version of the logo. "
+    "Reject old, retro, throwback, or vintage versions even if they look "
+    "similar in shape — the fine details (line weight, proportions, color "
+    "gradients) should match the reference.\n"
+    "\n"
+    "REJECTION RULES:\n"
+    "\n"
+    "- REJECT any image that is predominantly white/light — these are "
+    "invisible on white backgrounds and unusable.\n"
+    "- REJECT any image containing human faces, photographs, or people.\n"
+    "- REJECT event graphics, game scores, championship badges, or marketing "
+    "composites.\n"
+    "- REJECT images where the logo is too small, cropped, or obscured.\n"
+    "- VERIFY the logo actually belongs to {entity_name}. Some AP results "
+    "show a completely different team's logo.\n"
+    "\n"
+    "PREFERENCE (when multiple reasonable matches exist):\n"
+    "- Clean graphic on white or simple background\n"
+    "- No extra text, no elaborate marketing versions with wordmarks\n"
+    "- Standalone logo mark (icon/emblem preferred over text-only version)\n"
+    "\n"
+    "Respond in this exact format:\n"
+    "BEST_RESULT: <index number of the AP image>\n"
+    "CONFIDENCE: HIGH|MEDIUM|LOW\n"
+    "COLOR_MATCH: YES|NO|PARTIAL\n"
+    "REASONING: <one sentence>\n"
+    "\n"
+    "If no AP image matches the reference:\n"
+    "BEST_RESULT: NONE\n"
+    "CONFIDENCE: HIGH\n"
+    "COLOR_MATCH: NO\n"
+    "REASONING: <explanation>\n"
+)
+
+
 _CLASSIFICATION_MAP: dict[str, VisionChoice] = {
     "LOGO": VisionChoice.LOGO,
     "NOT_LOGO": VisionChoice.NOT_LOGO,
     "UNCERTAIN": VisionChoice.UNCERTAIN,
 }
+
+
+def is_likely_white_logo(image_data: bytes, brightness_threshold: float = 0.92) -> bool:
+    """Detect if an image is predominantly white (likely invisible on white bg).
+
+    Returns True when the average brightness exceeds *brightness_threshold*
+    (0-1 scale where 1 is fully white).
+    """
+    try:
+        img = Image.open(io.BytesIO(image_data)).convert("L")
+        pixels = img.getdata()
+        avg_brightness = sum(pixels) / (len(pixels) * 255)
+        return avg_brightness > brightness_threshold
+    except Exception:
+        return False
 
 
 async def identify_logo(
@@ -112,6 +192,100 @@ async def identify_logo(
     )
 
     return _parse_vision_response(entity_name, response.content[0].text)
+
+
+async def identify_logo_by_reference(
+    entity_name: str,
+    results: list[APSearchResult],
+    reference_image: bytes,
+    api_key: str,
+    cookies: httpx.Cookies | None = None,
+) -> VisionDecision:
+    """Compare AP thumbnails against a reference logo image using Vision.
+
+    Uses the more capable Sonnet model for reference matching to better
+    distinguish subtle color and design differences.
+    """
+    if not results:
+        return VisionDecision(
+            entity_name=entity_name,
+            no_logo_found=True,
+            reasoning="No search results to evaluate",
+        )
+
+    images = await _fetch_thumbnails(results, cookies)
+
+    if not any(img is not None for img in images):
+        return VisionDecision(
+            entity_name=entity_name,
+            no_logo_found=True,
+            reasoning="Could not fetch any preview thumbnails",
+        )
+
+    content = _build_reference_content(entity_name, reference_image, results, images)
+
+    client = anthropic.Anthropic(api_key=api_key)
+    response = client.messages.create(
+        model=REFERENCE_VISION_MODEL,
+        max_tokens=512,
+        temperature=0,
+        messages=[{"role": "user", "content": content}],
+    )
+
+    return _parse_vision_response(entity_name, response.content[0].text)
+
+
+def _build_reference_content(
+    entity_name: str,
+    reference_image: bytes,
+    results: list[APSearchResult],
+    images: list[bytes | None],
+) -> list[dict[str, Any]]:
+    """Build content array with reference image first, then AP thumbnails."""
+    content: list[dict[str, Any]] = []
+
+    prompt_text = REFERENCE_MATCH_PROMPT.format(
+        entity_name=entity_name,
+        count=sum(1 for img in images if img is not None),
+    )
+    content.append({"type": "text", "text": prompt_text})
+
+    # Reference image first
+    content.append({"type": "text", "text": "\n--- REFERENCE: correct official logo ---"})
+    content.append(
+        {
+            "type": "image",
+            "source": {
+                "type": "base64",
+                "media_type": _detect_media_type(reference_image),
+                "data": base64.b64encode(reference_image).decode("utf-8"),
+            },
+        }
+    )
+
+    # AP thumbnails
+    for i, (result, img_data) in enumerate(zip(results, images, strict=True)):
+        if img_data is None:
+            continue
+
+        content.append(
+            {
+                "type": "text",
+                "text": f'\n--- Image {i}: "{result.title}" ---',
+            }
+        )
+        content.append(
+            {
+                "type": "image",
+                "source": {
+                    "type": "base64",
+                    "media_type": _detect_media_type(img_data),
+                    "data": base64.b64encode(img_data).decode("utf-8"),
+                },
+            }
+        )
+
+    return content
 
 
 async def _fetch_thumbnails(

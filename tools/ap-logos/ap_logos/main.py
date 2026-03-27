@@ -13,6 +13,7 @@ from rich.progress import Progress, SpinnerColumn, TextColumn
 
 from .auth import StorageState, ensure_session, get_httpx_cookies, load_session, login
 from .downloader import download_logo
+from .reference import fetch_reference_logo
 from .manifest import (
     export_gcs_manifests,
     load_manifest,
@@ -20,9 +21,9 @@ from .manifest import (
     rebuild_manifest,
     save_manifest,
 )
-from .models import Category, DownloadResult, Entity
+from .models import APSearchResult, Category, DownloadResult, Entity
 from .search import debug_api, search_api
-from .vision import identify_logo
+from .vision import identify_logo, identify_logo_by_reference, is_likely_white_logo
 
 load_dotenv()
 
@@ -34,6 +35,22 @@ app = typer.Typer(
 console = Console()
 
 _MAX_CONSECUTIVE_FAILURES = 3
+
+_SPORTS_CATEGORIES = {Category.NBA, Category.NFL, Category.NHL, Category.MLB}
+
+# Keywords that indicate event/composite graphics rather than standalone logos.
+_EVENT_KEYWORDS = [
+    "stanley cup", "all-star", "allstar", "playoff", "quarter century",
+    "nhl draft", "nba draft", "nfl draft", "mlb draft", "super bowl",
+    "world series", "fined", "suspended", "traded", "injury",
+    "championship", "finals", "all star",
+]
+
+# Keywords that indicate old/retro logos.
+_OLD_KEYWORDS = ["old version", "throwback", "vintage", "retro", "classic logo"]
+
+# Keywords that indicate person-related content.
+_PERSON_KEYWORDS = ["headshot", "portrait", "player", "coach", "manager"]
 
 
 def _get_credentials() -> tuple[str, str]:
@@ -86,6 +103,102 @@ def _load_entities(
 
 
 # ---------------------------------------------------------------------------
+# Candidate pre-filtering for sports logos
+# ---------------------------------------------------------------------------
+
+
+def _prefilter_candidates(
+    results: list[APSearchResult], max_candidates: int = 8
+) -> list[tuple[int, APSearchResult]]:
+    """Pre-filter AP results to plausible logo candidates for sports teams.
+
+    Uses caption/title heuristics to remove faces, event graphics, and old
+    versions, then scores and ranks the remainder.
+
+    Returns a list of ``(original_index, result)`` tuples, capped at
+    *max_candidates*.
+    """
+    scored: list[tuple[int, int, APSearchResult]] = []  # (score, orig_idx, result)
+
+    for i, r in enumerate(results):
+        caption = r.caption.lower()
+        title = r.title.lower()
+        combined = f"{caption} {title}"
+
+        # Hard exclusions
+        if any(kw in combined for kw in _EVENT_KEYWORDS):
+            continue
+        if any(kw in combined for kw in _OLD_KEYWORDS):
+            continue
+        if any(kw in combined for kw in _PERSON_KEYWORDS):
+            continue
+
+        # Soft scoring
+        score = 0
+        if "primary logo" in caption:
+            score += 3
+        if "cap logo" in caption or "logo" in caption:
+            score += 2
+        if "logo" in title:
+            score += 1
+        if r.media_type == "graphic":
+            score += 1
+        if "secondary" in caption or "alternate" in caption:
+            score -= 1
+        if "wordmark" in caption or "lettering" in caption:
+            score -= 1
+        if "white" in caption:
+            score -= 2
+
+        scored.append((score, i, r))
+
+    # Sort by score descending, then by original position (earlier = better)
+    scored.sort(key=lambda t: (-t[0], t[1]))
+    return [(idx, result) for _score, idx, result in scored[:max_candidates]]
+
+
+def _find_best_logo_by_caption(results: list[APSearchResult]) -> int | None:
+    """Pick best logo using AP caption labels (for non-sports entities).
+
+    AP captions distinguish: "cap logo", "primary logo", "secondary logo",
+    "alternate logo", "lettering logo". For suggest bar icons we prefer
+    the simple cap mark over the elaborate primary/marketing logo.
+
+    Priority: current cap logo > old cap logo > current primary logo.
+    """
+    cap_current: int | None = None
+    cap_old: int | None = None
+    primary_current: int | None = None
+
+    for i, r in enumerate(results):
+        caption = r.caption.lower()
+        title = r.title.lower()
+        is_old = "old version" in caption or "old version" in title
+        is_event = any(kw in caption or kw in title for kw in _EVENT_KEYWORDS)
+
+        if is_event:
+            continue
+
+        has_cap = "cap logo" in caption
+        has_primary = "primary logo" in caption
+
+        if has_cap and not is_old and cap_current is None:
+            cap_current = i
+        elif has_cap and is_old and cap_old is None:
+            cap_old = i
+        elif has_primary and not is_old and primary_current is None:
+            primary_current = i
+
+    if cap_current is not None:
+        return cap_current
+    if cap_old is not None:
+        return cap_old
+    if primary_current is not None:
+        return primary_current
+    return None
+
+
+# ---------------------------------------------------------------------------
 # Commands
 # ---------------------------------------------------------------------------
 
@@ -128,7 +241,7 @@ def fetch(
     force: bool = typer.Option(False, "--force", help="Re-download even if already in manifest"),
     concurrency: int = typer.Option(3, "--concurrency", help="Parallel fetches"),
     max_results: int = typer.Option(
-        20, "--max-results", help="Search results to evaluate per entity"
+        40, "--max-results", help="Search results to evaluate per entity"
     ),
     headed: bool = typer.Option(False, "--headed", help="Show browser windows for debugging"),
 ) -> None:
@@ -250,9 +363,10 @@ async def _process_single_entity(
     """Process a single entity: search, evaluate with vision, download."""
     console.print(f"\n[bold]{entity.name}[/bold] ({entity.abbreviation})")
 
+    is_sports = entity.category in _SPORTS_CATEGORIES
+
     # Search — prefer "graphic" media type for sports to avoid player photos
-    sports_categories = {Category.NBA, Category.NFL, Category.NHL, Category.MLB}
-    media_types = ["graphic"] if entity.category in sports_categories else None
+    media_types = ["graphic"] if is_sports else None
 
     console.print(f"  Searching: {entity.search_query}")
     try:
@@ -275,25 +389,26 @@ async def _process_single_entity(
 
     console.print(f"  Found {len(search_results)} results")
 
-    # Vision evaluation
-    console.print("  Evaluating with Claude Vision...")
-    try:
-        decision = await identify_logo(entity.name, search_results, api_key, cookies)
-    except Exception as e:
-        console.print(f"  [red]Vision evaluation failed: {e}[/red]")
-        return DownloadResult(entity=entity, success=False, error=str(e))
-
-    if decision.no_logo_found or decision.best_index is None:
-        console.print(f"  [yellow]No logo found: {decision.reasoning}[/yellow]")
-        return DownloadResult(
-            entity=entity, success=False, skipped=True, skip_reason=decision.reasoning
+    # -----------------------------------------------------------------------
+    # Sports pipeline: pre-filter → reference comparison → fallback vision
+    # -----------------------------------------------------------------------
+    if is_sports:
+        best, vision_confidence = await _process_sports_entity(
+            entity, search_results, cookies, api_key
+        )
+    # -----------------------------------------------------------------------
+    # Non-sports pipeline: caption match → generic vision (unchanged)
+    # -----------------------------------------------------------------------
+    else:
+        best, vision_confidence = await _process_nonsports_entity(
+            entity, search_results, cookies, api_key
         )
 
-    best = search_results[decision.best_index]
-    console.print(
-        f'  [cyan]Best match: #{decision.best_index} "{best.title}" ({decision.confidence})[/cyan]'
-    )
-    console.print(f"  Reasoning: {decision.reasoning}")
+    if best is None:
+        console.print("  [yellow]No logo found[/yellow]")
+        return DownloadResult(
+            entity=entity, success=False, skipped=True, skip_reason="No matching logo found"
+        )
 
     if dry_run:
         console.print("  [dim](dry run - skipping download)[/dim]")
@@ -304,7 +419,7 @@ async def _process_single_entity(
             skip_reason="Dry run",
             ap_item_id=best.item_id,
             ap_title=best.title,
-            vision_confidence=decision.confidence,
+            vision_confidence=vision_confidence,
         )
 
     # Download
@@ -327,10 +442,126 @@ async def _process_single_entity(
             file_path=rel_path,
             ap_item_id=best.item_id,
             ap_title=best.title,
-            vision_confidence=decision.confidence,
+            vision_confidence=vision_confidence,
         )
 
     return DownloadResult(entity=entity, success=False, error="Download returned no file")
+
+
+async def _process_sports_entity(
+    entity: Entity,
+    search_results: list[APSearchResult],
+    cookies: httpx.Cookies,
+    api_key: str,
+) -> tuple[APSearchResult | None, str]:
+    """Sports-specific pipeline: pre-filter → reference match → vision fallback.
+
+    Always uses reference comparison when a reference image is available.
+    Caption text is used to filter/score candidates, never as the sole selector.
+    """
+    # Step 1: Pre-filter to top candidates
+    candidates = _prefilter_candidates(search_results)
+    if not candidates:
+        console.print("  [yellow]No plausible logo candidates after filtering[/yellow]")
+        return None, ""
+
+    console.print(f"  Pre-filtered to {len(candidates)} candidates")
+
+    # Build a sub-list for vision (preserving original indices for mapping back)
+    candidate_results = [r for _idx, r in candidates]
+    index_map = {i: orig_idx for i, (orig_idx, _r) in enumerate(candidates)}
+
+    # Step 2: Fetch reference logo
+    reference_image, ref_source = await fetch_reference_logo(
+        entity.category.value, entity.abbreviation
+    )
+
+    # Step 3: Reference-based comparison (primary path)
+    if reference_image:
+        console.print(f"  Comparing {len(candidate_results)} candidates against {ref_source} reference...")
+        try:
+            decision = await identify_logo_by_reference(
+                entity.name, candidate_results, reference_image, api_key, cookies
+            )
+            if not decision.no_logo_found and decision.best_index is not None:
+                # Map back to original search_results index
+                orig_idx = index_map.get(decision.best_index, decision.best_index)
+                best = search_results[orig_idx]
+                vision_confidence = f"REF_MATCH ({decision.confidence})"
+                console.print(
+                    f'  [cyan]Reference match: #{orig_idx} '
+                    f'"{best.title}"[/cyan]'
+                )
+                console.print(f"  Reasoning: {decision.reasoning}")
+                return best, vision_confidence
+        except Exception as e:
+            console.print(f"  [yellow]Reference comparison failed: {e}[/yellow]")
+
+    # Step 4: Fallback — generic vision on filtered candidates
+    console.print("  Falling back to generic vision on filtered candidates...")
+    try:
+        decision = await identify_logo(
+            entity.name, candidate_results, api_key, cookies
+        )
+    except Exception as e:
+        console.print(f"  [red]Vision evaluation failed: {e}[/red]")
+        return None, ""
+
+    if decision.no_logo_found or decision.best_index is None:
+        console.print(f"  [yellow]No logo found: {decision.reasoning}[/yellow]")
+        return None, ""
+
+    orig_idx = index_map.get(decision.best_index, decision.best_index)
+    best = search_results[orig_idx]
+    vision_confidence = decision.confidence
+    console.print(
+        f'  [cyan]Vision match: #{orig_idx} '
+        f'"{best.title}" ({vision_confidence})[/cyan]'
+    )
+    console.print(f"  Reasoning: {decision.reasoning}")
+    return best, vision_confidence
+
+
+async def _process_nonsports_entity(
+    entity: Entity,
+    search_results: list[APSearchResult],
+    cookies: httpx.Cookies,
+    api_key: str,
+) -> tuple[APSearchResult | None, str]:
+    """Non-sports pipeline: caption match → generic vision (unchanged logic)."""
+    # Phase 1: Caption-based selection (fast, no API call)
+    caption_index = _find_best_logo_by_caption(search_results)
+
+    if caption_index is not None:
+        best = search_results[caption_index]
+        vision_confidence = "CAPTION_MATCH"
+        console.print(
+            f'  [cyan]Caption match: #{caption_index} "{best.caption or best.title}"[/cyan]'
+        )
+        return best, vision_confidence
+
+    # Phase 2: Generic Vision evaluation (fallback)
+    console.print("  Evaluating with Claude Vision...")
+    try:
+        decision = await identify_logo(
+            entity.name, search_results, api_key, cookies
+        )
+    except Exception as e:
+        console.print(f"  [red]Vision evaluation failed: {e}[/red]")
+        return None, ""
+
+    if decision.no_logo_found or decision.best_index is None:
+        console.print(f"  [yellow]No logo found: {decision.reasoning}[/yellow]")
+        return None, ""
+
+    best = search_results[decision.best_index]
+    vision_confidence = decision.confidence
+    console.print(
+        f'  [cyan]Vision match: #{decision.best_index} '
+        f'"{best.title}" ({vision_confidence})[/cyan]'
+    )
+    console.print(f"  Reasoning: {decision.reasoning}")
+    return best, vision_confidence
 
 
 @app.command()
@@ -353,7 +584,9 @@ def export(
         Path("output"), "--output", "-o", help="Output directory (must contain manifest.json)"
     ),
     cdn_base: str = typer.Option(
-        "", "--cdn-base", help="CDN base URL for logo URLs (e.g. https://cdn.example.com)"
+        "https://storage.googleapis.com/merino-images-prod",
+        "--cdn-base",
+        help="CDN base URL for logo URLs",
     ),
 ) -> None:
     """Export GCS-compatible logo manifests from downloaded logos."""

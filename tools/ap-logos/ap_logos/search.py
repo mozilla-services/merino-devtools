@@ -292,6 +292,17 @@ def _parse_nrsearch_response(data: dict[str, Any] | list[Any]) -> list[APSearchR
             title = str(source.get("headline", "") or source.get("title", "") or "")
             friendly_key = str(source.get("friendlykey", "") or "")
 
+            # Extract caption text (contains "primary logo", "secondary logo" etc.)
+            cap = source.get("caption", {})
+            caption_text = ""
+            if isinstance(cap, dict):
+                nitf = cap.get("nitf", "")
+                # Strip HTML tags from NITF caption
+                import re
+                caption_text = re.sub(r"<[^>]+>", "", nitf).strip()
+            elif isinstance(cap, str):
+                caption_text = cap
+
             preview_url = ""
             if item_id:
                 preview_url = (
@@ -319,6 +330,7 @@ def _parse_nrsearch_response(data: dict[str, Any] | list[Any]) -> list[APSearchR
                         item_id=item_id,
                         title=title,
                         preview_url=preview_url,
+                        caption=caption_text,
                         renditions=renditions,
                         date_created=str(
                             source.get("firstcreated", "")

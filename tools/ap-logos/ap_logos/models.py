@@ -42,6 +42,7 @@ class APSearchResult(BaseModel):
     title: str
     preview_url: str
     detail_url: str = ""
+    caption: str = ""
     media_type: str = "photo"
     date_created: str = ""
     renditions: list[Rendition] = []
