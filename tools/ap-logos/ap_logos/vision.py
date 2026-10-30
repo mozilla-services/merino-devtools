@@ -13,10 +13,10 @@ from .models import APSearchResult, VisionCandidate, VisionChoice, VisionDecisio
 
 console = Console()
 
-# Haiku for generic (fallback) classification; Sonnet for reference matching
+# Haiku for generic (fallback) classification; Opus for reference matching
 # where accuracy on subtle color/design differences matters most.
 VISION_MODEL = "claude-haiku-4-5-20251001"
-REFERENCE_VISION_MODEL = "claude-sonnet-4-20250514"
+REFERENCE_VISION_MODEL = "claude-opus-5-5"
 
 LOGO_PROMPT = (
     "You are evaluating AP Newsroom search results to find the official "
@@ -187,7 +187,6 @@ async def identify_logo(
     response = client.messages.create(
         model=VISION_MODEL,
         max_tokens=1024,
-        temperature=0,
         messages=[{"role": "user", "content": content}],
     )
 
@@ -225,14 +224,20 @@ async def identify_logo_by_reference(
     content = _build_reference_content(entity_name, reference_image, results, images)
 
     client = anthropic.Anthropic(api_key=api_key)
-    response = client.messages.create(
+    # Opus 5.5 always thinks, and thinking counts against max_tokens, so leave
+    # room beyond the short text answer. On a safety refusal the server reruns
+    # the request on a fallback model.
+    response = client.beta.messages.create(
         model=REFERENCE_VISION_MODEL,
-        max_tokens=512,
-        temperature=0,
+        max_tokens=16000,
+        betas=["server-side-fallback-2026-07-01"],
+        fallbacks="default",
         messages=[{"role": "user", "content": content}],
     )
 
-    return _parse_vision_response(entity_name, response.content[0].text)
+    # The response starts with a thinking block, so join the text blocks.
+    text = "".join(block.text for block in response.content if block.type == "text")
+    return _parse_vision_response(entity_name, text)
 
 
 def _build_reference_content(

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Crop and resize logos to 200x200 with white background.
+"""Crop and resize logos to 200x200 with a white (default) or transparent background.
 
 Usage:
     # Convert all sports logos
@@ -14,6 +14,9 @@ Usage:
     # Custom size
     python convert_to_200.py --size 128
 
+    # Keep the transparent background instead of white
+    python convert_to_200.py --league soccer --transparent
+
     # Custom input/output dirs
     python convert_to_200.py --input output/logos --output output/logos_200
 """
@@ -25,20 +28,27 @@ from pathlib import Path
 from PIL import Image
 
 
-LEAGUES = ["nba", "nfl", "nhl", "mlb"]
+LEAGUES = ["nba", "nfl", "nhl", "mlb", "soccer"]
 
 
-def crop_and_resize(src: Path, dst: Path, size: int = 200) -> None:
-    """Tight-crop a logo, fit into size x size with white background."""
+def crop_and_resize(src: Path, dst: Path, size: int = 200, transparent: bool = False) -> None:
+    """Tight-crop a logo and fit it into size x size on white or transparent."""
     img = Image.open(src).convert("RGBA")
 
-    # Alpha-based bounding box
-    bbox = img.getbbox()
+    # Alpha-based bounding box. Use the alpha channel itself: img.getbbox() also
+    # counts fully transparent pixels stored as white (255, 255, 255, 0), which
+    # would leave the whole canvas uncropped.
+    alpha = img.getchannel("A")
+    bbox = alpha.point(lambda a: 255 if a >= 10 else 0).getbbox()
     if not bbox:
         print(f"  SKIP {src.name}: empty image")
         return
 
-    # Content-based crop: skip transparent + near-white pixels
+    # Transparent source: crop exactly to the visible logo.
+    if alpha.getextrema()[0] < 255:
+        return _fit(img.crop(bbox), dst, size, transparent)
+
+    # Opaque source (e.g. JPG): skip near-white background pixels instead.
     pixels = img.load()
     w, h = img.size
     min_x, min_y, max_x, max_y = w, h, 0, 0
@@ -55,16 +65,15 @@ def crop_and_resize(src: Path, dst: Path, size: int = 200) -> None:
 
     if max_x <= min_x or max_y <= min_y:
         min_x, min_y, max_x, max_y = bbox
+    else:
+        max_x, max_y = max_x + 1, max_y + 1
 
-    # Union with alpha bbox so nothing gets clipped
-    bx0, by0, bx1, by1 = bbox
-    min_x = max(0, min(min_x, bx0))
-    min_y = max(0, min(min_y, by0))
-    max_x = min(w, max(max_x + 1, bx1))
-    max_y = min(h, max(max_y + 1, by1))
+    # An opaque source has no transparency to keep, so it always goes on white.
+    _fit(img.crop((min_x, min_y, max_x, max_y)), dst, size, transparent=False)
 
-    cropped = img.crop((min_x, min_y, max_x, max_y))
 
+def _fit(cropped: Image.Image, dst: Path, size: int, transparent: bool) -> None:
+    """Scale a cropped logo into size x size with ~4% padding, centered."""
     # Fit into target size with ~4% padding, no stretching
     cw, ch = cropped.size
     usable = int(size * 0.96)
@@ -73,23 +82,26 @@ def crop_and_resize(src: Path, dst: Path, size: int = 200) -> None:
     new_h = round(ch * scale)
     resized = cropped.resize((new_w, new_h), Image.LANCZOS)
 
-    # White background, centered
-    canvas = Image.new("RGBA", (size, size), (255, 255, 255, 255))
+    background = (0, 0, 0, 0) if transparent else (255, 255, 255, 255)
+    canvas = Image.new("RGBA", (size, size), background)
     offset_x = (size - new_w) // 2
     offset_y = (size - new_h) // 2
-    canvas.paste(resized, (offset_x, offset_y), resized)
+    canvas.alpha_composite(resized, (offset_x, offset_y))
 
     dst.parent.mkdir(parents=True, exist_ok=True)
-    canvas.convert("RGB").save(dst, "PNG")
+    (canvas if transparent else canvas.convert("RGB")).save(dst, "PNG")
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Crop and resize logos to square with white bg")
+    parser = argparse.ArgumentParser(description="Crop and resize logos to a square image")
     parser.add_argument("--input", default="output/logos", help="Source logos directory")
     parser.add_argument("--output", default="output/logos_200", help="Output directory")
     parser.add_argument("--size", type=int, default=200, help="Target size in pixels (default: 200)")
     parser.add_argument("--league", choices=LEAGUES, help="Process only this league")
     parser.add_argument("--logo", help="Process a single logo (e.g. nba/nba_atl.png)")
+    parser.add_argument(
+        "--transparent", action="store_true", help="Keep a transparent background instead of white"
+    )
     args = parser.parse_args()
 
     input_base = Path(args.input)
@@ -102,7 +114,7 @@ def main() -> None:
         if not src.exists():
             print(f"Not found: {src}")
             return
-        crop_and_resize(src, dst, args.size)
+        crop_and_resize(src, dst, args.size, args.transparent)
         print(f"  {src.name} -> {dst}")
         return
 
@@ -117,7 +129,7 @@ def main() -> None:
             continue
         for src in sorted(src_dir.glob("*.png")):
             dst = output_base / league / src.name
-            crop_and_resize(src, dst, args.size)
+            crop_and_resize(src, dst, args.size, args.transparent)
             count += 1
 
     print(f"Processed {count} logos -> {output_base}/")

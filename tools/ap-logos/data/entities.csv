@@ -1,4 +1,4 @@
-category,name,abbreviation,search_query,league,notes
+category,name,abbreviation,search_query,league,notes,reference_url
 nhl,Anaheim Ducks,ANA,Anaheim Ducks logo,NHL,
 nhl,Boston Bruins,BOS,Boston Bruins logo,NHL,
 nhl,Buffalo Sabres,BUF,Buffalo Sabres logo,NHL,
@@ -644,3 +644,127 @@ airline,Avelo Airlines,XP,Avelo Airlines logo,airline,
 airline,Flair Airlines,F8,Flair Airlines logo,airline,
 airline,Sunwing Airlines,WG,Sunwing Airlines logo,airline,
 airline,Canadian North,5T,Canadian North airline logo,airline,
+soccer,AFC Bournemouth,90000508,AFC Bournemouth logo,EPL,BOR,https://upload.wikimedia.org/wikipedia/en/e/e5/AFC_Bournemouth_%282013%29.svg
+soccer,AFC Fylde,90001946,AFC Fylde logo,EFAC,FYL,https://upload.wikimedia.org/wikipedia/en/a/ab/AFC_Fylde_%282014%29.svg
+soccer,AFC Rushden & Diamonds,90001948,AFC Rushden & Diamonds logo,EFAC,RDM,https://upload.wikimedia.org/wikipedia/en/8/8a/Rushden_%26_Diamonds.svg
+soccer,AFC Wimbledon,90001952,AFC Wimbledon logo,EFAC,WIM,https://upload.wikimedia.org/wikipedia/en/1/1b/AFC_Wimbledon_%282020%29_logo.svg
+soccer,Accrington Stanley FC,90001943,Accrington Stanley FC logo,EFAC,AST,https://upload.wikimedia.org/wikipedia/en/b/ba/Accrington_Stanley_F.C._logo.svg
+soccer,Aldershot Town FC,90001953,Aldershot Town FC logo,EFAC,ALD,https://upload.wikimedia.org/wikipedia/en/3/30/Aldershot_Town_FC_crest.svg
+soccer,Altrincham FC,90001955,Altrincham FC logo,EFAC,ALT,https://upload.wikimedia.org/wikipedia/en/3/3b/Altrincham_FC_crest.svg
+soccer,Alvechurch FC,90001956,Alvechurch FC logo,EFAC,ALV,https://upload.wikimedia.org/wikipedia/en/b/b6/Alvechurch_FC_crest.svg
+soccer,Arsenal FC,90000509,Arsenal FC logo,EPL,ARS,https://upload.wikimedia.org/wikipedia/en/5/53/Arsenal_FC.svg
+soccer,Aston Villa FC,90000510,Aston Villa FC logo,EPL,AST,https://upload.wikimedia.org/wikipedia/en/9/9a/Aston_Villa_FC_new_crest.svg
+soccer,Barnet FC,90001967,Barnet FC logo,EFAC,BAR,https://upload.wikimedia.org/wikipedia/en/a/a2/Barnet_FC.svg
+soccer,Barnsley FC,90001968,Barnsley FC logo,EFAC,BAR,https://upload.wikimedia.org/wikipedia/en/c/c9/Barnsley_FC.svg
+soccer,Barrow AFC,90001970,Barrow AFC logo,EFAC,BAR,https://upload.wikimedia.org/wikipedia/en/2/28/Barrow_AFC_logo.svg
+soccer,Berkhamsted FC,90001983,Berkhamsted FC logo,EFAC,BRK,https://upload.wikimedia.org/wikipedia/en/7/77/Berkhamsted_F.C._logo.png
+soccer,Birmingham City FC,90001988,Birmingham City FC logo,ELC,BIR,https://upload.wikimedia.org/wikipedia/en/6/68/Birmingham_City_FC_logo.svg
+soccer,Blackburn Rovers FC,90001990,Blackburn Rovers FC logo,ELC,BBR,https://upload.wikimedia.org/wikipedia/en/0/0f/Blackburn_Rovers.svg
+soccer,Blackpool FC,90001992,Blackpool FC logo,EFAC,BLA,https://upload.wikimedia.org/wikipedia/en/d/df/Blackpool_FC_logo.svg
+soccer,Bolton Wanderers FC,90001997,Bolton Wanderers FC logo,ELC,BOL,https://upload.wikimedia.org/wikipedia/en/8/82/Bolton_Wanderers_FC_logo.svg
+soccer,Boreham Wood FC,90001998,Boreham Wood FC logo,EFAC,BOR,https://upload.wikimedia.org/wikipedia/en/e/ea/Boreham_Wood_F.C._logo.svg
+soccer,Bradford City AFC,90002002,Bradford City AFC logo,EFAC,BRA,https://upload.wikimedia.org/wikipedia/en/3/32/Bradford_City_AFC.png
+soccer,Brentford FC,90002005,Brentford FC logo,EPL,BRE,https://upload.wikimedia.org/wikipedia/en/2/2a/Brentford_FC_crest.svg
+soccer,Brighton & Hove Albion FC,90001116,Brighton & Hove Albion FC logo,EPL,BHA,https://upload.wikimedia.org/wikipedia/en/d/d0/Brighton_and_Hove_Albion_FC_crest.svg
+soccer,Bristol City FC,90002009,Bristol City FC logo,ELC,BRI,https://upload.wikimedia.org/wikipedia/en/f/f5/Bristol_City_crest.svg
+soccer,Bristol Rovers FC,90002011,Bristol Rovers FC logo,EFAC,BRI,https://upload.wikimedia.org/wikipedia/en/4/47/Bristol_Rovers_F.C._logo.svg
+soccer,Bromley FC,90002012,Bromley FC logo,EFAC,BRO,https://upload.wikimedia.org/wikipedia/en/3/35/Bromley_FC_crest.svg
+soccer,Burnley FC,90000857,Burnley FC logo,ELC,BUR,https://upload.wikimedia.org/wikipedia/en/6/6d/Burnley_FC_Logo.svg
+soccer,Burton Albion FC,90002016,Burton Albion FC logo,EFAC,BUR,https://upload.wikimedia.org/wikipedia/en/9/93/Burton_Albion_FC_crest.svg
+soccer,Cambridge United FC,90002021,Cambridge United FC logo,EFAC,CAM,https://upload.wikimedia.org/wikipedia/en/8/8f/Cambridge_United_FC.svg
+soccer,Cardiff City FC,90001461,Cardiff City FC logo,ELC,CAR,https://upload.wikimedia.org/wikipedia/en/3/3c/Cardiff_City_crest.svg
+soccer,Carlisle United FC,90002023,Carlisle United FC logo,EFAC,CAR,https://upload.wikimedia.org/wikipedia/en/6/6c/Carlisle_United_FC_crest.svg
+soccer,Charlton Athletic FC,90002026,Charlton Athletic FC logo,ELC,CHA,https://upload.wikimedia.org/wikipedia/en/f/f5/Charlton_Athletic_FC_crest.svg
+soccer,Chelsea FC,90000511,Chelsea FC logo,EPL,CFC,https://upload.wikimedia.org/wikipedia/en/c/cc/Chelsea_FC.svg
+soccer,Cheltenham Town FC,90002029,Cheltenham Town FC logo,EFAC,CHE,https://upload.wikimedia.org/wikipedia/en/c/c3/Cheltenham_Town_F.C._logo.svg
+soccer,Chesterfield FC,90002033,Chesterfield FC logo,EFAC,CHE,https://upload.wikimedia.org/wikipedia/en/9/94/Chesterfield_FC_crest.svg
+soccer,Colchester United FC,90002044,Colchester United FC logo,EFAC,COL,https://upload.wikimedia.org/wikipedia/en/9/9c/Colchester_United_FC_crest.svg
+soccer,Coventry City FC,90002051,Coventry City FC logo,EPL,COV,https://upload.wikimedia.org/wikipedia/en/7/7b/Coventry_City_FC_crest.svg
+soccer,Crawley Town FC,90002052,Crawley Town FC logo,EFAC,CRA,https://upload.wikimedia.org/wikipedia/en/1/11/Crawley_Town_FC_crest.svg
+soccer,Cray Wanderers FC,90002053,Cray Wanderers FC logo,EFAC,CRA,https://upload.wikimedia.org/wikipedia/en/f/f8/Cray_Wanderers_F.C._logo.svg
+soccer,Crewe Alexandra FC,90002054,Crewe Alexandra FC logo,EFAC,CRE,https://upload.wikimedia.org/wikipedia/en/9/9d/Crewe_Alexandra.svg
+soccer,Crystal Palace FC,90000512,Crystal Palace FC logo,EPL,CRY,https://upload.wikimedia.org/wikipedia/en/a/a2/Crystal_Palace_FC_logo_%282022%29.svg
+soccer,Derby County FC,90002059,Derby County FC logo,ELC,DER,https://upload.wikimedia.org/wikipedia/en/4/4a/Derby_County_crest.svg
+soccer,Doncaster Rovers FC,90002062,Doncaster Rovers FC logo,EFAC,DON,https://upload.wikimedia.org/wikipedia/en/c/c5/Doncaster_Rovers_F.C._logo.svg
+soccer,Dover Athletic FC,90002065,Dover Athletic FC logo,EFAC,DOV,https://upload.wikimedia.org/wikipedia/en/c/c8/Dover_Athletic_FC_crest.svg
+soccer,Eastleigh FC,90002071,Eastleigh FC logo,EFAC,EAS,https://upload.wikimedia.org/wikipedia/en/5/5c/Eastleigh_FC_crest.svg
+soccer,Everton FC,90000513,Everton FC logo,EPL,EVE,https://upload.wikimedia.org/wikipedia/en/7/7c/Everton_FC_logo.svg
+soccer,Exeter City FC,90002077,Exeter City FC logo,EFAC,EXE,https://upload.wikimedia.org/wikipedia/en/7/71/Exeter_City_FC.svg
+soccer,FC Halifax Town,90002081,FC Halifax Town logo,EFAC,HAL,https://upload.wikimedia.org/wikipedia/en/e/e5/FC_Halifax_Town_crest.svg
+soccer,Fleetwood Town FC,90002085,Fleetwood Town FC logo,EFAC,FLE,https://upload.wikimedia.org/wikipedia/en/e/ed/Fleetwood_Town_F.C._logo.svg
+soccer,Forest Green Rovers FC,90002087,Forest Green Rovers FC logo,EFAC,FGR,https://upload.wikimedia.org/wikipedia/en/8/85/Forest_Green_Rovers_crest.svg
+soccer,Fulham FC,90001462,Fulham FC logo,EPL,FUL,https://upload.wikimedia.org/wikipedia/en/e/eb/Fulham_FC_%28shield%29.svg
+soccer,Gillingham FC,90002092,Gillingham FC logo,EFAC,GIL,https://upload.wikimedia.org/wikipedia/en/5/5e/FC_Gillingham_Logo.svg
+soccer,Grimsby Town FC,90002101,Grimsby Town FC logo,EFAC,GRI,https://upload.wikimedia.org/wikipedia/en/d/db/Grimsby_Town_F.C._logo.svg
+soccer,Guiseley AFC,90002102,Guiseley AFC logo,EFAC,GUI,https://upload.wikimedia.org/wikipedia/en/3/31/Guiseley_AFC_logo.png
+soccer,Harborough Town FC,90001735,Harborough Town FC logo,EFAC,HAR,https://upload.wikimedia.org/wikipedia/en/8/85/Harborough_Town_F.C._logo.svg
+soccer,Harrogate Town AFC,90002108,Harrogate Town AFC logo,EFAC,HAR,https://upload.wikimedia.org/wikipedia/en/4/40/Harrogate_Town_AFC.svg
+soccer,Hornchurch FC,90001947,Hornchurch FC logo,EFAC,HOR,https://upload.wikimedia.org/wikipedia/en/7/78/Hornchurch_FC_logo.svg
+soccer,Huddersfield Town AFC,90001117,Huddersfield Town AFC logo,EFAC,HUD,https://upload.wikimedia.org/wikipedia/en/4/43/Huddersfield_Town_AFC_crest.svg
+soccer,Hull City AFC,90000972,Hull City AFC logo,EPL,HUL,https://upload.wikimedia.org/wikipedia/en/5/54/Hull_City_A.F.C._logo.svg
+soccer,Ipswich Town FC,90002133,Ipswich Town FC logo,EPL,IPS,https://upload.wikimedia.org/wikipedia/en/4/43/Ipswich_Town.svg
+soccer,Kidderminster Harriers FC,90002137,Kidderminster Harriers FC logo,EFAC,KID,https://upload.wikimedia.org/wikipedia/en/6/6e/Kidderminster_Harriers_FC_crest.svg
+soccer,Leeds United FC,90002148,Leeds United FC logo,EPL,LEE,https://upload.wikimedia.org/wikipedia/en/5/54/Leeds_United_F.C._logo.svg
+soccer,Leicester City FC,90000514,Leicester City FC logo,EFAC,LEI,https://upload.wikimedia.org/wikipedia/en/2/2d/Leicester_City_crest.svg
+soccer,Leyton Orient FC,90002152,Leyton Orient FC logo,EFAC,LEY,https://upload.wikimedia.org/wikipedia/en/a/a8/Leyton_Orient_F.C._logo.svg
+soccer,Lincoln City FC,90002153,Lincoln City FC logo,ELC,LIN,https://upload.wikimedia.org/wikipedia/en/3/39/Lincoln_City_FC_2024_crest.svg
+soccer,Liverpool FC,90000515,Liverpool FC logo,EPL,LIV,https://upload.wikimedia.org/wikipedia/en/0/0c/Liverpool_FC.svg
+soccer,Luton Town FC,90002160,Luton Town FC logo,EFAC,LUT,https://upload.wikimedia.org/wikipedia/en/9/9d/Luton_Town_logo.svg
+soccer,Macclesfield FC,90002540,Macclesfield FC logo,EFAC,MAC,https://upload.wikimedia.org/wikipedia/en/7/75/Macclesfield_FC_crest.svg
+soccer,Manchester City FC,90000516,Manchester City FC logo,EPL,MNC,https://upload.wikimedia.org/wikipedia/en/e/eb/Manchester_City_FC_badge.svg
+soccer,Manchester United FC,90000517,Manchester United FC logo,EPL,MNU,https://upload.wikimedia.org/wikipedia/en/7/7a/Manchester_United_FC_crest.svg
+soccer,Mansfield Town FC,90002167,Mansfield Town FC logo,EFAC,MAN,https://upload.wikimedia.org/wikipedia/en/7/7d/Mansfield_Town_FC.svg
+soccer,Marine AFC,90002169,Marine AFC logo,EFAC,MAR,https://upload.wikimedia.org/wikipedia/commons/5/58/MarineAFC_White.png
+soccer,Middlesbrough FC,90000973,Middlesbrough FC logo,ELC,MID,https://upload.wikimedia.org/wikipedia/en/thumb/2/2c/Middlesbrough_FC_crest.svg/960px-Middlesbrough_FC_crest.svg.png
+soccer,Millwall FC,90002179,Millwall FC logo,ELC,MIL,https://upload.wikimedia.org/wikipedia/en/7/71/Millwall_FC_logo.png
+soccer,Milton Keynes Dons FC,90002180,Milton Keynes Dons FC logo,EFAC,MKD,https://upload.wikimedia.org/wikipedia/en/e/e5/Milton_Keynes_Dons_FC_2025_crest.svg
+soccer,Newcastle United FC,90000518,Newcastle United FC logo,EPL,NEW,https://upload.wikimedia.org/wikipedia/en/5/56/Newcastle_United_Logo.svg
+soccer,Newport County AFC,90002188,Newport County AFC logo,EFAC,NEW,https://upload.wikimedia.org/wikipedia/en/4/44/Newport_County_AFC_crest.svg
+soccer,Northampton Town FC,90002193,Northampton Town FC logo,EFAC,NTH,https://upload.wikimedia.org/wikipedia/en/2/2d/Northampton_Town_F.C._logo.svg
+soccer,Norwich City FC,90000519,Norwich City FC logo,ELC,NOR,https://upload.wikimedia.org/wikipedia/en/1/17/Norwich_City_FC_logo.svg
+soccer,Nottingham Forest FC,90002195,Nottingham Forest FC logo,EPL,NOT,https://upload.wikimedia.org/wikipedia/en/e/e5/Nottingham_Forest_F.C._logo.svg
+soccer,Notts County FC,90002196,Notts County FC logo,EFAC,NOT,https://upload.wikimedia.org/wikipedia/en/2/2e/Notts_County_Logo.svg
+soccer,Oldham Athletic AFC,90002198,Oldham Athletic AFC logo,EFAC,OLD,https://upload.wikimedia.org/wikipedia/en/a/a2/Oldham_Athletic_AFC_%28emblem%29.svg
+soccer,Oxford City FC,90002200,Oxford City FC logo,EFAC,OXF,https://upload.wikimedia.org/wikipedia/en/f/fb/Oxford_City_FC_crest.svg
+soccer,Oxford United FC,90002201,Oxford United FC logo,EFAC,OXF,https://upload.wikimedia.org/wikipedia/en/3/3e/Oxford_United_FC_logo.svg
+soccer,Peterborough United FC,90002205,Peterborough United FC logo,EFAC,PET,https://upload.wikimedia.org/wikipedia/en/9/9a/Peterborough_United_FC_crest.svg?utm_source=en.wikipedia.org&utm_campaign=imageinfo&utm_content=original
+soccer,Plymouth Argyle FC,90002210,Plymouth Argyle FC logo,EFAC,PLY,https://upload.wikimedia.org/wikipedia/en/a/a8/Plymouth_Argyle_F.C._logo.svg
+soccer,Plymouth Parkway FC,90001826,Plymouth Parkway FC logo,EFAC,PLP,https://upload.wikimedia.org/wikipedia/en/a/a1/Plymouth_Parkway_FC_crest.svg
+soccer,Port Vale FC,90002213,Port Vale FC logo,EFAC,PVL,https://upload.wikimedia.org/wikipedia/en/5/5f/Port_Vale_logo.svg
+soccer,Portsmouth FC,90002214,Portsmouth FC logo,ELC,POR,https://upload.wikimedia.org/wikipedia/en/3/38/Portsmouth_FC_logo.svg
+soccer,Preston North End FC,90002217,Preston North End FC logo,ELC,PNE,https://upload.wikimedia.org/wikipedia/en/8/82/Preston_North_End_FC.svg
+soccer,Queens Park Rangers FC,90002219,Queens Park Rangers FC logo,ELC,QPR,https://upload.wikimedia.org/wikipedia/en/3/31/Queens_Park_Rangers_crest.svg
+soccer,Reading FC,90002225,Reading FC logo,EFAC,REA,https://upload.wikimedia.org/wikipedia/en/1/11/Reading_FC.svg
+soccer,Rochdale AFC,90002228,Rochdale AFC logo,EFAC,ROC,https://upload.wikimedia.org/wikipedia/en/b/bb/Rochdale_AFC_crest.svg
+soccer,Rotherham United FC,90002231,Rotherham United FC logo,EFAC,ROT,https://upload.wikimedia.org/wikipedia/en/4/42/Rotherham_United_F.C._svg.svg
+soccer,Salford City FC,90002235,Salford City FC logo,EFAC,SAL,https://upload.wikimedia.org/wikipedia/en/7/70/Salford_City_F.C._new_logo.svg?utm_source=en.wikipedia.org&utm_campaign=imageinfo&utm_content=original
+soccer,Salisbury FC,90002236,Salisbury FC logo,EFAC,SAL,https://upload.wikimedia.org/wikipedia/en/9/91/Salisbury_City_FC.png
+soccer,Scunthorpe United FC,90002240,Scunthorpe United FC logo,EFAC,SCU,https://upload.wikimedia.org/wikipedia/en/b/b3/Scunthorpe_United_FC_crest.svg
+soccer,Sheffield United FC,90001540,Sheffield United FC logo,ELC,SHE,https://upload.wikimedia.org/wikipedia/en/9/9c/Sheffield_United_FC_logo.svg
+soccer,Sheffield Wednesday FC,90002245,Sheffield Wednesday FC logo,EFAC,SWE,https://upload.wikimedia.org/wikipedia/en/8/88/Sheffield_Wednesday_badge.svg
+soccer,Sholing FC,90001861,Sholing FC logo,EFAC,SHO,https://upload.wikimedia.org/wikipedia/en/4/43/Sholing_F.C._logo.svg
+soccer,Shrewsbury Town FC,90002247,Shrewsbury Town FC logo,EFAC,SHR,https://upload.wikimedia.org/wikipedia/en/1/1b/Shrewsbury_Town_F.C._logo.svg
+soccer,Southampton FC,90000520,Southampton FC logo,ELC,SOT,https://upload.wikimedia.org/wikipedia/en/c/c9/FC_Southampton.svg
+soccer,Stafford Rangers FC,90002262,Stafford Rangers FC logo,EFAC,STA,https://upload.wikimedia.org/wikipedia/en/8/88/Staffordfc.png
+soccer,Stevenage FC,90002266,Stevenage FC logo,EFAC,STE,https://upload.wikimedia.org/wikipedia/en/4/49/Stevenage_FC_crest.svg
+soccer,Stockport County FC,90002267,Stockport County FC logo,EFAC,STO,https://upload.wikimedia.org/wikipedia/en/4/43/Stockport_County_FC_logo_2020.svg
+soccer,Stoke City FC,90000521,Stoke City FC logo,ELC,STO,https://upload.wikimedia.org/wikipedia/en/5/5e/Stoke_City_FC_crest_2001.svg
+soccer,Sunderland AFC,90000522,Sunderland AFC logo,EPL,SUN,https://upload.wikimedia.org/wikipedia/en/7/77/Logo_Sunderland.svg
+soccer,Sutton United FC,90002272,Sutton United FC logo,EFAC,SUT,https://upload.wikimedia.org/wikipedia/en/e/eb/Sutton_United_FC_crest.svg
+soccer,Swansea City AFC,90000523,Swansea City AFC logo,ELC,SWA,https://upload.wikimedia.org/wikipedia/en/f/f9/Swansea_City_AFC_logo.svg
+soccer,Swindon Town FC,90002274,Swindon Town FC logo,EFAC,SWI,https://upload.wikimedia.org/wikipedia/en/a/a3/Swindon_Town_FC.svg
+soccer,Tottenham Hotspur FC,90000524,Tottenham Hotspur FC logo,EPL,TOT,https://upload.wikimedia.org/wikipedia/en/b/b4/Tottenham_Hotspur.svg
+soccer,Tranmere Rovers FC,90002290,Tranmere Rovers FC logo,EFAC,TRA,https://upload.wikimedia.org/wikipedia/en/5/55/Tranmere_Rovers_FC_crest.svg
+soccer,Walsall FC,90002294,Walsall FC logo,EFAC,WAL,https://upload.wikimedia.org/wikipedia/en/e/ef/Walsall_FC.svg
+soccer,Watford FC,90000525,Watford FC logo,ELC,WAT,https://upload.wikimedia.org/wikipedia/en/e/e2/Watford.svg
+soccer,Wealdstone FC,90002300,Wealdstone FC logo,EFAC,WEA,https://upload.wikimedia.org/wikipedia/en/d/dc/Wealdstone_FC_crest.svg
+soccer,West Bromwich Albion FC,90000526,West Bromwich Albion FC logo,ELC,WBA,https://upload.wikimedia.org/wikipedia/en/8/8b/West_Bromwich_Albion.svg
+soccer,West Ham United FC,90000527,West Ham United FC logo,ELC,WHU,https://upload.wikimedia.org/wikipedia/en/c/c2/West_Ham_United_FC_logo.svg
+soccer,Wigan Athletic FC,90002313,Wigan Athletic FC logo,EFAC,WIG,https://upload.wikimedia.org/wikipedia/en/4/43/Wigan_Athletic.svg
+soccer,Wimborne Town FC,90002314,Wimborne Town FC logo,EFAC,WIM,https://upload.wikimedia.org/wikipedia/en/3/3f/Wimborne_Town_F.C._%28logo%29.png
+soccer,Wolverhampton Wanderers FC,90001463,Wolverhampton Wanderers FC logo,ELC,WOL,https://upload.wikimedia.org/wikipedia/en/f/fc/Wolverhampton_Wanderers.svg
+soccer,Worcester City FC,90001939,Worcester City FC logo,EFAC,WOR,https://upload.wikimedia.org/wikipedia/en/3/32/Worcester_City_FC_crest.svg
+soccer,Wrexham AFC,90002327,Wrexham AFC logo,ELC,WRE,https://upload.wikimedia.org/wikipedia/en/0/0d/Wrexham_A.F.C._Logo.svg
+soccer,Wycombe Wanderers FC,90002328,Wycombe Wanderers FC logo,EFAC,WYC,https://upload.wikimedia.org/wikipedia/en/f/fb/Wycombe_Wanderers_FC_logo.svg
+soccer,Yeovil Town FC,90002331,Yeovil Town FC logo,EFAC,YEO,https://upload.wikimedia.org/wikipedia/de/5/59/Yeovil_Town_FC.svg
+soccer,York City FC,90002332,York City FC logo,EFAC,YOR,https://upload.wikimedia.org/wikipedia/en/7/71/York_City_FC.svg
