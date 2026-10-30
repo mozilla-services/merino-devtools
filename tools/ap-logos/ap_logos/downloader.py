@@ -11,7 +11,9 @@ from .models import APSearchResult, Rendition
 
 console = Console()
 
-MAPI_BASE = "https://mapi.associatedpress.com/v2"
+NEWSROOM_DOWNLOAD_API = "https://api.newsroom.ap.org/v1/downloadnr"
+# Web app version AP Newsroom sends with its download requests.
+NEWSROOM_APP_VERSION = "v15.7.0"
 
 # Preferred download resolution labels, tried in order.
 _BROWSER_DOWNLOAD_LABELS = [
@@ -95,14 +97,70 @@ async def download_logo(
 async def _download_rendition(
     item_id: str, rendition_code: str, out_path: Path, storage: StorageState
 ) -> bool:
-    """Download a specific rendition via the mapi API."""
+    """Download a specific rendition the way the AP Newsroom web app does.
+
+    1. ``check`` returns the item's downloadable renditions.
+    2. ``tick`` records the download against the account's allowance and
+       returns a signed ``ClientMediaUrl``.
+    3. The signed URL serves the file.
+    """
     cookies = get_httpx_cookies(storage)
-    url = f"{MAPI_BASE}/items/{item_id}/renditions/{rendition_code}/download"
-    headers = {"Referer": f"{AP_BASE}/", "Origin": AP_BASE}
+    headers = {
+        "Accept": "application/json, text/plain, */*",
+        "Referer": f"{AP_BASE}/",
+        "Origin": AP_BASE,
+    }
 
     try:
-        async with httpx.AsyncClient(cookies=cookies, follow_redirects=True, timeout=30) as client:
-            resp = await client.get(url, headers=headers)
+        async with httpx.AsyncClient(
+            cookies=cookies, headers=headers, follow_redirects=True, timeout=30
+        ) as client:
+            check = await client.post(
+                f"{NEWSROOM_DOWNLOAD_API}/check",
+                json={
+                    "ItemIds": [item_id],
+                    "IsClip": False,
+                    "IsNonSalable": False,
+                    "version": NEWSROOM_APP_VERSION,
+                },
+            )
+            check.raise_for_status()
+            item = check.json()["Items"][0]
+            rendition = next(
+                (r for r in item["Renditions"] if r.get("ContentId") == rendition_code), None
+            )
+            if rendition is None or not rendition.get("IsAvailable", True):
+                console.print("  [yellow]Rendition not available for download[/yellow]")
+                return False
+
+            tick = await client.post(
+                f"{NEWSROOM_DOWNLOAD_API}/tick",
+                json={
+                    "Ticks": [
+                        {
+                            "ItemId": item["ItemId"],
+                            "MediaType": item["MediaType"],
+                            "Role": rendition["Rel"],
+                            "Title": item["Title"],
+                            "ContentId": rendition["ContentId"],
+                            "StoryNumber": item["StoryNumber"],
+                            "ContentRenditionId": rendition["ContentRenditionId"],
+                        }
+                    ],
+                    "StoryItemID": None,
+                    "version": NEWSROOM_APP_VERSION,
+                },
+            )
+            tick.raise_for_status()
+            tick_body = tick.json()
+            if tick_body.get("OverageAlert"):
+                console.print("  [yellow]AP reports the download allowance is exceeded[/yellow]")
+            media_url = (tick_body.get("Items") or [{}])[0].get("ClientMediaUrl")
+            if not media_url:
+                console.print("  [yellow]AP did not return a download URL[/yellow]")
+                return False
+
+            resp = await client.get(media_url)
             if (
                 resp.status_code == 200
                 and len(resp.content) > 500
@@ -114,7 +172,8 @@ async def _download_rendition(
                     f"{out_path.name} ({len(resp.content)} bytes)[/green]"
                 )
                 return True
-    except httpx.HTTPError as e:
+            console.print(f"  [yellow]Signed download returned HTTP {resp.status_code}[/yellow]")
+    except (httpx.HTTPError, KeyError, IndexError, ValueError) as e:
         console.print(f"  [yellow]Rendition download failed: {e}[/yellow]")
 
     return False

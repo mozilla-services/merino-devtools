@@ -11,6 +11,7 @@ class Category(StrEnum):
     NFL = "nfl"
     NHL = "nhl"
     MLB = "mlb"
+    SOCCER = "soccer"
     AIRLINE = "airline"
     COMPANY = "company"
 
@@ -22,6 +23,7 @@ class Entity(BaseModel):
     search_query: str
     league: str = ""
     notes: str = ""
+    reference_url: str = ""
 
 
 class Rendition(BaseModel):

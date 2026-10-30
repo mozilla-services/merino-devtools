@@ -11,7 +11,7 @@ Automated logo acquisition from AP Newsroom. Searches for entity logos (sports t
 
 For non-sports entities (airlines, companies), the pipeline uses caption matching with a Vision fallback.
 
-The pipeline is driven by `data/entities.csv`, which lists ~640 entities across six categories: NBA, NFL, NHL, MLB, airlines, and Fortune 500 companies.
+The pipeline is driven by `data/entities.csv`, which lists ~770 entities across seven categories: NBA, NFL, NHL, MLB, soccer, airlines, and Fortune 500 companies.
 
 ## Setup
 
@@ -31,6 +31,8 @@ ANTHROPIC_API_KEY=sk-ant-...
 ```
 
 Optionally set `REFERENCE_SOURCE` to override the default reference logo source (e.g. `espn`).
+
+`SPORTSDATA_API_KEY` is only needed to regenerate the soccer entities (see below).
 
 ## Usage
 
@@ -60,6 +62,24 @@ ap-logos fetch --category nhl --dry-run
 ```
 
 Logos land in `output/logos/{category}/{category}_{abbr}.png`. The fetch command is idempotent — it skips entities already in the manifest unless you pass `--force`.
+
+### Soccer clubs
+
+Soccer entities are generated from SportsDataIO rather than maintained by hand:
+
+```sh
+ap-logos soccer-entities                          # Championship + Premier League + FA Cup Round 1 onward
+ap-logos soccer-entities --league ELC --cup EFAC  # pick competitions by SportsDataIO key
+ap-logos fetch --category soccer
+```
+
+`soccer-entities` replaces every `soccer` row in `data/entities.csv` and leaves other rows untouched. Leagues add every club on the current-season schedule; cups add clubs scheduled from Round 1 onward (preliminary and qualifying rounds are skipped). The Premier League is included by default because its clubs enter the FA Cup in Round 3, after the draw.
+
+SportsDataIO soccer team keys are not unique (e.g. `BAR` is Barnsley, Barnet and Barrow), so the soccer `abbreviation` is the club's SportsDataIO `GlobalTeamId` (files land in `output/logos/soccer/soccer_{GlobalTeamId}.png`). The SportsDataIO key is kept in the `notes` column.
+
+If the `<name> logo` search finds nothing for a soccer club, `fetch` retries once without the `FC`/`AFC` suffix (e.g. `Leyton Orient FC logo` → `Leyton Orient logo`), since AP often titles crests that way.
+
+Each soccer row carries a `reference_url`, the club's `WikipediaLogoUrl` from SportsDataIO, which is used as the reference image for Vision matching. Wikipedia crests are fair-use images, so they are only used for matching and are never downloaded as the final logo.
 
 ### Re-fetch a bad logo
 
@@ -132,7 +152,7 @@ ap-logos status
 
 ## Reference sources
 
-For sports teams (NBA, NFL, NHL, MLB), the pipeline fetches a reference logo to verify AP results against. Reference sources are configured in `ap_logos/reference.py`:
+For sports teams (NBA, NFL, NHL, MLB, soccer), the pipeline fetches a reference logo to verify AP results against. An entity's own `reference_url` column is tried first (soccer uses this; Wikimedia SVGs are fetched as PNG renderings since Vision doesn't accept SVG), then the sources configured per league in `ap_logos/reference.py`:
 
 ```python
 REFERENCE_SOURCES = {
@@ -152,6 +172,7 @@ ap_logos/
   search.py      — AP Newsroom search API client with browser fallback
   vision.py      — Claude Vision integration for logo identification
   reference.py   — Configurable reference logo sources (ESPN CDN, etc.)
+  sportsdata.py  — SportsDataIO client that generates soccer entities
   downloader.py  — Logo download via API renditions or browser
   manifest.py    — Manifest I/O, rebuild, and GCS export
   main.py        — Typer CLI

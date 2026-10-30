@@ -23,6 +23,7 @@ from .manifest import (
 )
 from .models import APSearchResult, Category, DownloadResult, Entity
 from .search import debug_api, search_api
+from .sportsdata import fetch_soccer_entities, write_category_entities
 from .vision import identify_logo, identify_logo_by_reference, is_likely_white_logo
 
 load_dotenv()
@@ -36,7 +37,7 @@ console = Console()
 
 _MAX_CONSECUTIVE_FAILURES = 3
 
-_SPORTS_CATEGORIES = {Category.NBA, Category.NFL, Category.NHL, Category.MLB}
+_SPORTS_CATEGORIES = {Category.NBA, Category.NFL, Category.NHL, Category.MLB, Category.SOCCER}
 
 # Keywords that indicate event/composite graphics rather than standalone logos.
 _EVENT_KEYWORDS = [
@@ -51,6 +52,9 @@ _OLD_KEYWORDS = ["old version", "throwback", "vintage", "retro", "classic logo"]
 
 # Keywords that indicate person-related content.
 _PERSON_KEYWORDS = ["headshot", "portrait", "player", "coach", "manager"]
+
+# Club suffixes AP often leaves out of logo titles (e.g. "Leyton Orient logo").
+_SOCCER_NAME_SUFFIXES = (" AFC", " FC")
 
 
 def _get_credentials() -> tuple[str, str]:
@@ -68,6 +72,25 @@ def _get_anthropic_key() -> str:
         console.print("[red]ANTHROPIC_API_KEY must be set in .env or environment[/red]")
         raise typer.Exit(1)
     return key
+
+
+def _get_sportsdata_key() -> str:
+    key = os.getenv("SPORTSDATA_API_KEY", "")
+    if not key:
+        console.print("[red]SPORTSDATA_API_KEY must be set in .env or environment[/red]")
+        raise typer.Exit(1)
+    return key
+
+
+def _short_search_query(entity: Entity) -> str | None:
+    """Return a fallback query for soccer clubs with the club suffix removed."""
+    if entity.category != Category.SOCCER:
+        return None
+    for suffix in _SOCCER_NAME_SUFFIXES:
+        if entity.name.endswith(suffix):
+            query = f"{entity.name[: -len(suffix)]} logo"
+            return query if query != entity.search_query else None
+    return None
 
 
 def _load_entities(
@@ -89,6 +112,7 @@ def _load_entities(
                         or f"{row['name'].strip()} logo",
                         league=row.get("league", "").strip(),
                         notes=row.get("notes", "").strip(),
+                        reference_url=(row.get("reference_url") or "").strip(),
                     )
                 )
             except (ValueError, KeyError) as exc:
@@ -108,7 +132,9 @@ def _load_entities(
 
 
 def _prefilter_candidates(
-    results: list[APSearchResult], max_candidates: int = 8
+    results: list[APSearchResult],
+    max_candidates: int = 8,
+    category: Category | None = None,
 ) -> list[tuple[int, APSearchResult]]:
     """Pre-filter AP results to plausible logo candidates for sports teams.
 
@@ -120,13 +146,18 @@ def _prefilter_candidates(
     """
     scored: list[tuple[int, int, APSearchResult]] = []  # (score, orig_idx, result)
 
+    event_keywords = _EVENT_KEYWORDS
+    if category == Category.SOCCER:
+        # "Championship" is an English league name, not an event graphic.
+        event_keywords = [kw for kw in _EVENT_KEYWORDS if kw != "championship"]
+
     for i, r in enumerate(results):
         caption = r.caption.lower()
         title = r.title.lower()
         combined = f"{caption} {title}"
 
         # Hard exclusions
-        if any(kw in combined for kw in _EVENT_KEYWORDS):
+        if any(kw in combined for kw in event_keywords):
             continue
         if any(kw in combined for kw in _OLD_KEYWORDS):
             continue
@@ -232,7 +263,10 @@ def fetch(
     ),
     output_dir: Path = typer.Option(Path("output"), "--output", "-o", help="Output directory"),
     category: str | None = typer.Option(
-        None, "--category", "-c", help="Filter by category (nba, nfl, nhl, mlb, airline, company)"
+        None,
+        "--category",
+        "-c",
+        help="Filter by category (nba, nfl, nhl, mlb, soccer, airline, company)",
     ),
     entity: str | None = typer.Option(
         None, "--entity", "-e", help="Process single entity by abbreviation"
@@ -368,18 +402,30 @@ async def _process_single_entity(
     # Search — prefer "graphic" media type for sports to avoid player photos
     media_types = ["graphic"] if is_sports else None
 
-    console.print(f"  Searching: {entity.search_query}")
-    try:
-        search_results = await search_api(
-            entity.search_query, storage, max_results, media_types=media_types
-        )
-        # If graphic-only search found nothing, retry with photos included
-        if not search_results and media_types == ["graphic"]:
-            console.print("  [dim]No graphics found, broadening to photos...[/dim]")
-            search_results = await search_api(entity.search_query, storage, max_results)
-    except Exception as e:
-        console.print(f"  [red]Search failed: {e}[/red]")
-        return DownloadResult(entity=entity, success=False, error=str(e))
+    queries = [entity.search_query]
+    short_query = _short_search_query(entity)
+    if short_query:
+        queries.append(short_query)
+
+    search_results: list[APSearchResult] = []
+    search_error: Exception | None = None
+    for query in queries:
+        console.print(f"  Searching: {query}")
+        try:
+            search_results = await search_api(query, storage, max_results, media_types=media_types)
+            # If graphic-only search found nothing, retry with photos included
+            if not search_results and media_types == ["graphic"]:
+                console.print("  [dim]No graphics found, broadening to photos...[/dim]")
+                search_results = await search_api(query, storage, max_results)
+            search_error = None
+        except Exception as e:
+            console.print(f"  [red]Search failed: {e}[/red]")
+            search_error = e
+        if search_results:
+            break
+
+    if search_error is not None:
+        return DownloadResult(entity=entity, success=False, error=str(search_error))
 
     if not search_results:
         console.print("  [yellow]No search results found[/yellow]")
@@ -460,7 +506,7 @@ async def _process_sports_entity(
     Caption text is used to filter/score candidates, never as the sole selector.
     """
     # Step 1: Pre-filter to top candidates
-    candidates = _prefilter_candidates(search_results)
+    candidates = _prefilter_candidates(search_results, category=entity.category)
     if not candidates:
         console.print("  [yellow]No plausible logo candidates after filtering[/yellow]")
         return None, ""
@@ -473,7 +519,7 @@ async def _process_sports_entity(
 
     # Step 2: Fetch reference logo
     reference_image, ref_source = await fetch_reference_logo(
-        entity.category.value, entity.abbreviation
+        entity.category.value, entity.abbreviation, reference_url=entity.reference_url
     )
 
     # Step 3: Reference-based comparison (primary path)
@@ -562,6 +608,33 @@ async def _process_nonsports_entity(
     )
     console.print(f"  Reasoning: {decision.reasoning}")
     return best, vision_confidence
+
+
+@app.command("soccer-entities")
+def soccer_entities(
+    input_path: Path = typer.Option(
+        Path("data/entities.csv"), "--input", "-i", help="Path to entities CSV"
+    ),
+    leagues: list[str] = typer.Option(
+        ["ELC", "EPL"],
+        "--league",
+        help="SportsDataIO league key; every club on the current schedule is added",
+    ),
+    cups: list[str] = typer.Option(
+        ["EFAC"],
+        "--cup",
+        help="SportsDataIO cup key; clubs scheduled from Round 1 onward are added",
+    ),
+) -> None:
+    """Replace the soccer rows in the entities CSV with clubs from SportsDataIO."""
+    api_key = _get_sportsdata_key()
+    entities = fetch_soccer_entities(api_key, leagues, cups)
+    write_category_entities(input_path, Category.SOCCER, entities)
+    missing = sum(1 for e in entities if not e.reference_url)
+    console.print(
+        f"[green]Wrote {len(entities)} soccer entities to {input_path}[/green] "
+        f"({missing} without a reference logo)"
+    )
 
 
 @app.command()
